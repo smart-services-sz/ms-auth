@@ -211,6 +211,76 @@ export class PermissionsService {
     }
   }
 
+  async deletePermission(
+    id: string,
+    user: JwtUser,
+    ip: string,
+  ) {
+    try {
+      const permission = await this.prisma.permission.findUnique({
+        where: { id },
+      });
+
+      if (!permission) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'Permiso no encontrado',
+        });
+      }
+
+      const activeAssignments = await this.prisma.userPermission.count({
+        where: {
+          permissionId: id,
+          user: {
+            isActive: true,
+          },
+        },
+      });
+
+      if (activeAssignments > 0) {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'No se puede eliminar el permiso porque está asignado a usuarios activos',
+        });
+      }
+
+      await this.prisma.permission.delete({
+        where: { id },
+      });
+
+      this.audit.log({
+        action: 'PERM_DELETED',
+        entity: 'Permiso',
+        entityId: id,
+        performedBy: user.userId,
+        ipAddress: ip,
+        level: AuditLevel.INFO,
+        metadata: { permissionName: permission.name },
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.audit.log({
+        action: 'PERM_DELETE_FAILED',
+        entity: 'Permiso',
+        entityId: id,
+        performedBy: user?.userId,
+        ipAddress: ip,
+        level: AuditLevel.ERROR,
+        metadata: { error: error.message },
+      });
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: 400,
+        message: 'Error al eliminar permiso: ' + error.message,
+      });
+    }
+  }
+
   async getUserPermissions(userId: string, performedBy: string, ip: string) {
     const rows = await this.prisma.userPermission.findMany({
       where: { userId },

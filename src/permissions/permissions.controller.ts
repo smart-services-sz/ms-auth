@@ -52,6 +52,17 @@ export class PermissionsController {
     );
   }
 
+  @MessagePattern('permission.delete')
+  async deletePermission(@Payload() payload: any) {
+    const { data, context } = payload;
+
+    return this.permissionsService.deletePermission(
+      data.id,
+      data.user,
+      context.ip,
+    );
+  }
+
   @MessagePattern('user.permissions.set') 
   set(@Payload() payload: any) {
     const { data, context } = payload;

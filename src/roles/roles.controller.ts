@@ -52,6 +52,17 @@ export class RolesController {
     );
   }
 
+  @MessagePattern('roles.delete')
+  async deleteRole(@Payload() payload: any) {
+    const { data, context } = payload;
+
+    return this.rolesService.deleteRole(
+      data.id,
+      data.user,
+      context.ip,
+    );
+  }
+
   
   @MessagePattern('user.roles.set') // set absoluto (reemplaza)
   set(@Payload() payload: any) {

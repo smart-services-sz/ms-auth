@@ -212,6 +212,76 @@ export class RolesService {
     }
   }
 
+  async deleteRole(
+    id: string,
+    user: JwtUser,
+    ip: string,
+  ) {
+    try {
+      const role = await this.prisma.role.findUnique({
+        where: { id },
+      });
+
+      if (!role) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'Rol no encontrado',
+        });
+      }
+
+      const activeAssignments = await this.prisma.userRole.count({
+        where: {
+          roleId: id,
+          user: {
+            isActive: true,
+          },
+        },
+      });
+
+      if (activeAssignments > 0) {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'No se puede eliminar el rol porque está asignado a usuarios activos',
+        });
+      }
+
+      await this.prisma.role.delete({
+        where: { id },
+      });
+
+      this.audit.log({
+        action: 'ROLE_DELETED',
+        entity: 'Rol',
+        entityId: id,
+        performedBy: user.userId,
+        ipAddress: ip,
+        level: AuditLevel.INFO,
+        metadata: { roleName: role.name },
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.audit.log({
+        action: 'ROLE_DELETE_FAILED',
+        entity: 'Rol',
+        entityId: id,
+        performedBy: user?.userId,
+        ipAddress: ip,
+        level: AuditLevel.ERROR,
+        metadata: { error: error.message },
+      });
+
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        statusCode: 400,
+        message: 'Error al eliminar rol: ' + error.message,
+      });
+    }
+  }
+
   async getUserRoles(userId: string, performedBy: string, ip: string) {
     const rows = await this.prisma.userRole.findMany({
       where: { userId },

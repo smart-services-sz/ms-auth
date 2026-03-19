@@ -72,7 +72,7 @@ export class AuthService {
         metadata: { email, reason: 'User not found or inactive' },
       });
 
-      throw new UnauthorizedException();
+      throw new RpcException({ statusCode: 401, message: 'Credenciales inválidas' });
     }
 
     const valid = await this.passwordService.compare(
@@ -91,11 +91,11 @@ export class AuthService {
         metadata: { reason: 'Invalid password' },
       });
 
-      throw new UnauthorizedException();
+      throw new RpcException({ statusCode: 401, message: 'Credenciales inválidas' });
     }
 
     if (!user.name) {
-      throw new UnauthorizedException('El usuario no tiene nombre configurado');
+      throw new RpcException({ statusCode: 401, message: 'El usuario no tiene nombre configurado' });
     }
 
     const userPerms = await this.prisma.userPermission.findMany({
@@ -121,7 +121,7 @@ export class AuthService {
     const roles = userRoles.map( r => r.role.name );
 
     if (roles.length === 0) {
-      throw new UnauthorizedException('El usuario no tiene roles asignados');
+      throw new RpcException({ statusCode: 403, message: 'El usuario no tiene roles asignados' });
     }
 
     const refreshId = randomUUID();
@@ -227,7 +227,7 @@ export class AuthService {
     }
 
     if (!user.name) {
-      throw new UnauthorizedException('El usuario no tiene nombre configurado');
+      throw new RpcException({ statusCode: 401, message: 'El usuario no tiene nombre configurado' });
     }
 
     const userPerms = await this.prisma.userPermission.findMany({
@@ -249,7 +249,7 @@ export class AuthService {
     const roles = userRoles.map( r => r.role.name );
 
     if (roles.length === 0) {
-      throw new UnauthorizedException('El usuario no tiene roles asignados');
+      throw new RpcException({ statusCode: 403, message: 'El usuario no tiene roles asignados' });
     }
 
     const newRefreshId = randomUUID();

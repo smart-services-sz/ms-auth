@@ -194,6 +194,31 @@ export class AuthService {
     return { success: true };
   }
 
+  async revokeUserSessions(userId: string, performedBy: string, ip: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      throw new RpcException({ statusCode: 404, message: 'Usuario no encontrado' });
+    }
+
+    await this.refreshTokenService.revokeByUser(userId);
+
+    this.audit.log({
+      action: 'USER_SESSIONS_REVOKED',
+      entity: 'User',
+      entityId: user.id,
+      performedBy,
+      ipAddress: ip,
+      level: AuditLevel.SECURITY,
+      metadata: { email: user.email },
+    });
+
+    return { success: true };
+  }
+
   /* ===================================================== */
   /* REFRESH                                               */
   /* ===================================================== */

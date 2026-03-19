@@ -92,6 +92,17 @@ export class AuthController {
     );
   }
 
+  @MessagePattern('users.revoke.sessions')
+  async revokeUserSessions(@Payload() payload: any) {
+    const { data, context } = payload;
+
+    return this.authService.revokeUserSessions(
+      data.id,
+      context.userId,
+      context.ip,
+    );
+  }
+
   @MessagePattern('users.create')
   async createUser(@Payload() payload: any) {
     const { data, context } = payload;

@@ -34,4 +34,8 @@ export class CreateUserDto {
     @IsString()
     area: string;
 
+    @IsOptional()
+    @IsString()
+    whatsappNumber?: string;
+
 }

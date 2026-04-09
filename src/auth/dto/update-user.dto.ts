@@ -39,5 +39,9 @@ export class UpdateUserDto {
 
   @IsString()
   area?: string;
+
+  @IsOptional()
+  @IsString()
+  whatsappNumber?: string;
   
 }

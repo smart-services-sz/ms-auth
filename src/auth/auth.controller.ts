@@ -81,6 +81,12 @@ export class AuthController {
     );
   }
 
+  @MessagePattern('users.get.by.phone')
+  async getUserByPhone(@Payload() payload: any) {
+    const { data } = payload;
+    return this.authService.getUserByWhatsappNumber(data.phoneNumber);
+  }
+
   @MessagePattern('users.toggle.status')
   async toggleStatus(@Payload() payload: any) {
     const { data, context } = payload;

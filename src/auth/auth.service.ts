@@ -342,6 +342,7 @@ export class AuthService {
           OR: [
             { email: { contains: search } },
             { name: { contains: search } },
+            { whatsappNumber: { contains: search } },
           ],
         }
       : {};
@@ -407,6 +408,42 @@ export class AuthService {
     return user;
   }
 
+  async getUserByWhatsappNumber(phoneNumber: string) {
+    const normalized = (phoneNumber ?? '').replace(/\D/g, '');
+
+    if (!normalized) {
+      throw new RpcException({ statusCode: 400, message: 'Número inválido' });
+    }
+
+    const variants = [
+      normalized,
+      `+${normalized}`,
+      phoneNumber,
+    ].filter(Boolean);
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: variants.map((value) => ({ whatsappNumber: value })),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        area: true,
+        cargo: true,
+        legajo: true,
+        whatsappNumber: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      return null;
+    }
+
+    return user;
+  }
+
   async createUser(
     dto: CreateUserDto,
     performedBy: string,
@@ -424,6 +461,7 @@ export class AuthService {
         cargo: dto.cargo,
         legajo: dto.legajo,
         area: dto.area,
+        whatsappNumber: dto.whatsappNumber,
       },
     });
 
@@ -482,6 +520,7 @@ export class AuthService {
       cargo: dto.cargo,
       legajo: dto.legajo,
       area: dto.area,
+      whatsappNumber: dto.whatsappNumber,
     };
 
     if (dto.password) {

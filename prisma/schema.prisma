@@ -16,6 +16,7 @@ model User {
   id           String   @id @default(uuid())
   name         String?   
   email        String   @unique
+  whatsappNumber String? @unique
   passwordHash String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())

@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE `User` ADD COLUMN `area` VARCHAR(191) NULL,
-    ADD COLUMN `cargo` VARCHAR(191) NULL,
-    ADD COLUMN `legajo` VARCHAR(191) NULL;

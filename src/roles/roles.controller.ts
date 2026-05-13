@@ -75,4 +75,16 @@ export class RolesController {
     const { data, context } = payload;
     return this.rolesService.getUserRoles(data.userId, context.userId, context.ip);
   }
+
+  @MessagePattern('role.permissions.get')
+  getRolePermissions(@Payload() payload: any) {
+    const { data, context } = payload;
+    return this.rolesService.getRolePermissions(data.roleId, context.userId, context.ip);
+  }
+
+  @MessagePattern('role.permissions.set')
+  setRolePermissions(@Payload() payload: any) {
+    const { data, context } = payload;
+    return this.rolesService.setRolePermissions(data.dto, data.user, context.ip);
+  }
 }

@@ -98,17 +98,6 @@ export class AuthService {
       throw new RpcException({ statusCode: 401, message: 'El usuario no tiene nombre configurado' });
     }
 
-    const userPerms = await this.prisma.userPermission.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        permission: true,
-      },
-    });
-
-    const permissions = userPerms.map( r => r.permission.name);
-
     const userRoles = await this.prisma.userRole.findMany({
       where: {
         userId: user.id,
@@ -123,6 +112,32 @@ export class AuthService {
     if (roles.length === 0) {
       throw new RpcException({ statusCode: 403, message: 'El usuario no tiene roles asignados' });
     }
+
+    const [userPerms, rolePerms] = await Promise.all([
+      this.prisma.userPermission.findMany({
+        where: {
+          userId: user.id,
+        },
+        include: {
+          permission: true,
+        },
+      }),
+      this.prisma.rolePermission.findMany({
+        where: {
+          roleId: { in: userRoles.map((row) => row.role.id) },
+        },
+        include: {
+          permission: true,
+        },
+      }),
+    ]);
+
+    const permissions = Array.from(
+      new Set([
+        ...userPerms.map((row) => row.permission.name),
+        ...rolePerms.map((row) => row.permission.name),
+      ]),
+    );
 
     const refreshId = randomUUID();
 
@@ -255,13 +270,6 @@ export class AuthService {
       throw new RpcException({ statusCode: 401, message: 'El usuario no tiene nombre configurado' });
     }
 
-    const userPerms = await this.prisma.userPermission.findMany({
-      where: { userId: user.id },
-      include: { permission: true },
-    });
-
-    const permissions = userPerms.map(r => r.permission.name);
-
     const userRoles = await this.prisma.userRole.findMany({
       where: {
         userId: user.id,
@@ -276,6 +284,26 @@ export class AuthService {
     if (roles.length === 0) {
       throw new RpcException({ statusCode: 403, message: 'El usuario no tiene roles asignados' });
     }
+
+    const [userPerms, rolePerms] = await Promise.all([
+      this.prisma.userPermission.findMany({
+        where: { userId: user.id },
+        include: { permission: true },
+      }),
+      this.prisma.rolePermission.findMany({
+        where: {
+          roleId: { in: userRoles.map((row) => row.role.id) },
+        },
+        include: { permission: true },
+      }),
+    ]);
+
+    const permissions = Array.from(
+      new Set([
+        ...userPerms.map((row) => row.permission.name),
+        ...rolePerms.map((row) => row.permission.name),
+      ]),
+    );
 
     const newRefreshId = randomUUID();
 
@@ -543,5 +571,46 @@ export class AuthService {
     });
 
     return updatedUser;
+  }
+
+  async deleteUser(
+    id: string,
+    performedBy: string,
+    ip: string,
+  ) {
+    if (id === performedBy) {
+      throw new RpcException({
+        statusCode: 400,
+        message: 'No puedes eliminar tu propio usuario',
+      });
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      throw new RpcException({
+        statusCode: 404,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    await this.prisma.user.delete({
+      where: { id },
+    });
+
+    this.audit.log({
+      action: 'USER_DELETED',
+      entity: 'User',
+      entityId: id,
+      performedBy,
+      ipAddress: ip,
+      level: AuditLevel.WARNING,
+      metadata: { email: user.email },
+    });
+
+    return { success: true };
   }
 }

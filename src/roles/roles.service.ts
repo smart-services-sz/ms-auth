@@ -8,6 +8,7 @@ import { JwtUser } from '../common/decorators/current-user.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignUserRolesDto } from './dto/assign-user-role.dto';
+import { AssignRolePermissionsDto } from './dto/assign-role-permissions.dto';
 
 
 @Injectable()
@@ -345,5 +346,73 @@ export class RolesService {
 
     // devolvemos permisos para refrescar UI
     return this.getUserRoles(dto.userId, user.userId, ip);
+  }
+
+  async getRolePermissions(roleId: string, performedBy: string, ip: string) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+
+    if (!role) {
+      throw new RpcException({ statusCode: 404, message: 'Rol no encontrado' });
+    }
+
+    const rows = await this.prisma.rolePermission.findMany({
+      where: { roleId },
+      include: { permission: true },
+      orderBy: { permission: { name: 'asc' } },
+    });
+
+    this.audit.log({
+      action: 'ROLE_PERMS_VIEWED',
+      entity: 'Rol',
+      entityId: roleId,
+      performedBy,
+      ipAddress: ip,
+      level: AuditLevel.INFO,
+    });
+
+    return rows.map((row) => row.permission);
+  }
+
+  async setRolePermissions(dto: AssignRolePermissionsDto, user: JwtUser, ip: string) {
+    const role = await this.prisma.role.findUnique({ where: { id: dto.roleId } });
+
+    if (!role) {
+      throw new RpcException({ statusCode: 404, message: 'Rol no encontrado' });
+    }
+
+    const permissions = await this.prisma.permission.findMany({
+      where: { id: { in: dto.permissionIds } },
+      select: { id: true, name: true },
+    });
+
+    if (permissions.length !== dto.permissionIds.length) {
+      throw new RpcException({
+        statusCode: 400,
+        message: 'Uno o más permisos no existen',
+      });
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.rolePermission.deleteMany({ where: { roleId: dto.roleId } }),
+      this.prisma.rolePermission.createMany({
+        data: dto.permissionIds.map((permissionId) => ({
+          roleId: dto.roleId,
+          permissionId,
+        })),
+        skipDuplicates: true,
+      }),
+    ]);
+
+    this.audit.log({
+      action: 'ROLE_PERMS_UPDATED',
+      entity: 'Rol',
+      entityId: dto.roleId,
+      performedBy: user.userId,
+      ipAddress: ip,
+      level: AuditLevel.INFO,
+      metadata: { permissionIds: dto.permissionIds },
+    });
+
+    return this.getRolePermissions(dto.roleId, user.userId, ip);
   }
 }

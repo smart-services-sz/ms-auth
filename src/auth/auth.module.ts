@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { NatsModule } from 'src/nats/nats.module';
-import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
 import { TokenService } from './jwt.service';
 import { RefreshTokenService } from './refresh-token.service';
-import { AuditPublisher } from 'src/utils/audit.publisher';
+import { NatsModule } from '../nats/nats.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { AuditPublisher } from '../utils/audit.publisher';
 
 @Module({
   imports: [

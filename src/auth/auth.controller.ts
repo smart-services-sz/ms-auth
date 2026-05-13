@@ -130,4 +130,15 @@ export class AuthController {
       context.ip,
     );
   }
+
+  @MessagePattern('users.delete')
+  async deleteUser(@Payload() payload: any) {
+    const { data, context } = payload;
+
+    return this.authService.deleteUser(
+      data.id,
+      context.userId,
+      context.ip,
+    );
+  }
 }

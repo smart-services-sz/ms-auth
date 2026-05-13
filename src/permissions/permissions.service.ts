@@ -244,6 +244,19 @@ export class PermissionsService {
         });
       }
 
+      const roleAssignments = await this.prisma.rolePermission.count({
+        where: {
+          permissionId: id,
+        },
+      });
+
+      if (roleAssignments > 0) {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'No se puede eliminar el permiso porque está asignado a roles',
+        });
+      }
+
       await this.prisma.permission.delete({
         where: { id },
       });

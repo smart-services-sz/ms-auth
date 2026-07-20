@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PasswordService } from './password.service';
 import { TokenService } from './jwt.service';
 import { randomUUID } from 'crypto';
@@ -364,16 +365,32 @@ export class AuthService {
 
     // ✅ SEARCH
     const search = (pagination.search || '').trim();
+    const role = (pagination.role || '').trim().toUpperCase();
+    const hasIsActiveFilter = typeof pagination.isActive === 'boolean';
 
-    const where = search
-      ? {
-          OR: [
-            { email: { contains: search } },
-            { name: { contains: search } },
-            { whatsappNumber: { contains: search } },
-          ],
-        }
-      : {};
+    const where: Prisma.UserWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search } },
+        { name: { contains: search } },
+        { whatsappNumber: { contains: search } },
+      ];
+    }
+
+    if (role) {
+      where.userRoles = {
+        some: {
+          role: {
+            name: role,
+          },
+        },
+      };
+    }
+
+    if (hasIsActiveFilter) {
+      where.isActive = pagination.isActive;
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({

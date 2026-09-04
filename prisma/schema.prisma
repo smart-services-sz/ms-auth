@@ -30,7 +30,10 @@ model User {
   cargo         String?
   legajo        String?
   area          String?
+  municipalityId String?
+  areaId         String?
 
+  @@index([municipalityId, areaId])
 }
 
 model RefreshToken {

@@ -38,6 +38,8 @@ export class TokenService {
     cargo: string | null,
     legajo: string | null,
     area: string | null,
+    municipalityId: string | null,
+    areaId: string | null,
   ) {
     return this.jwt.sign(
       {
@@ -49,6 +51,8 @@ export class TokenService {
         cargo,
         legajo,
         area,
+        municipalityId,
+        areaId,
       },
       {
         secret: this.accessSecret,

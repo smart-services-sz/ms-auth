@@ -151,6 +151,8 @@ export class AuthService {
       user.cargo,
       user.legajo,
       user.area,
+      user.municipalityId,
+      user.areaId,
     );
 
     const refreshToken = this.tokenService.generateRefreshToken(
@@ -317,6 +319,8 @@ export class AuthService {
       user.cargo,
       user.legajo,
       user.area,
+      user.municipalityId,
+      user.areaId,
     );
 
     const newRefreshToken = this.tokenService.generateRefreshToken(
@@ -475,6 +479,8 @@ export class AuthService {
         name: true,
         email: true,
         area: true,
+        municipalityId: true,
+        areaId: true,
         cargo: true,
         legajo: true,
         whatsappNumber: true,
@@ -506,6 +512,8 @@ export class AuthService {
         cargo: dto.cargo,
         legajo: dto.legajo,
         area: dto.area,
+        municipalityId: dto.municipalityId,
+        areaId: dto.areaId,
         whatsappNumber: dto.whatsappNumber,
       },
     });
@@ -565,6 +573,8 @@ export class AuthService {
       cargo: dto.cargo,
       legajo: dto.legajo,
       area: dto.area,
+      municipalityId: dto.municipalityId,
+      areaId: dto.areaId,
       whatsappNumber: dto.whatsappNumber,
     };
 

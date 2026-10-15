@@ -36,6 +36,88 @@ model User {
   @@index([municipalityId, areaId])
 }
 
+model Municipality {
+  id                  String   @id
+  name                String
+  country             String   @default("Argentina")
+  province            String?
+  defaultCity         String?
+  timezone            String   @default("America/Argentina/Buenos_Aires")
+  allowedCountries    String[] @default(["Argentina"])
+  allowedAdminAreas   String[] @default([])
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  areas        MunicipalityArea[]
+  categories   MunicipalityCategory[]
+  neighborhoods MunicipalityNeighborhood[]
+  rules        MunicipalityRule[]
+
+  @@index([isActive, name])
+}
+
+model MunicipalityArea {
+  municipalityId String
+  slug           String
+  name           String
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  municipality Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  @@id([municipalityId, slug])
+  @@index([municipalityId, isActive])
+}
+
+model MunicipalityCategory {
+  municipalityId String
+  code           String
+  name           String
+  description    String?
+  defaultPriority String @default("media")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  municipality Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  @@id([municipalityId, code])
+  @@index([municipalityId, isActive])
+}
+
+model MunicipalityNeighborhood {
+  municipalityId String
+  slug           String
+  name           String
+  areaSlug       String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  municipality Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  @@id([municipalityId, slug])
+  @@index([municipalityId, areaSlug, isActive])
+}
+
+model MunicipalityRule {
+  municipalityId String
+  key            String
+  value          Json
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  municipality Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  @@id([municipalityId, key])
+  @@index([municipalityId, isActive])
+}
+
 model RefreshToken {
   id              String   @id @default(uuid())
   tokenHash       String   
